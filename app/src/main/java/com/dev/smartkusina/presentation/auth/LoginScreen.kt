@@ -1,61 +1,35 @@
 package com.dev.smartkusina.presentation.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.dev.smartkusina.R
 import com.dev.smartkusina.composables.LoadingScreen
+import com.dev.smartkusina.presentation.auth.state.AuthAction
+import com.dev.smartkusina.presentation.auth.state.AuthState
 
 @Composable
 fun LoginScreen(
@@ -67,28 +41,13 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(authState) {
-        when (authState) {
-            is AuthState.Authenticated -> {
-                onNavigateToHome()
-            }
-
-            else -> {}
+        if (authState is AuthState.Authenticated) {
+            onNavigateToHome()
         }
     }
 
-    when (authState) {
-        is AuthState.Loading -> {
-            LoadingScreen()
-            return
-        }
-
-        is AuthState.Authenticated -> {
-            return
-        }
-
-        else -> {
-            // Show login/register UI
-        }
+    if (authState is AuthState.Loading) {
+        LoadingScreen()
     }
 
     var isLoginMode by remember { mutableStateOf(true) }
@@ -103,24 +62,14 @@ fun LoginScreen(
     LaunchedEffect(authAction) {
         authAction?.let { action ->
             when (action) {
-                is AuthAction.LoginSuccess -> {
-                    // Navigation will be handled by authState change
-                }
-
+                is AuthAction.LoginSuccess -> {}
                 is AuthAction.RegisterSuccess -> {
-                    // Switch to login mode after successful registration
                     isLoginMode = true
                     password = ""
                     confirmPassword = ""
                 }
-
-                is AuthAction.Error -> {
-                    // Error will be shown in UI
-                }
-
-                AuthAction.LogoutSuccess -> {
-                    // Handle logout if needed
-                }
+                is AuthAction.Error -> {}
+                AuthAction.LogoutSuccess -> {}
             }
             viewModel.clearAuthAction()
         }
@@ -156,10 +105,7 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "🍳",
-                        fontSize = 40.sp
-                    )
+                    Text(text = "🍳", fontSize = 40.sp)
                 }
             }
 
@@ -219,9 +165,7 @@ fun LoginScreen(
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(24.dp)
-                ) {
+                Column(modifier = Modifier.padding(24.dp)) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
@@ -250,9 +194,11 @@ fun LoginScreen(
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(
-                                    if (passwordVisible) Icons.Default.Edit else Icons.Default.Edit,
-                                    contentDescription = if (passwordVisible) "Hide password" else "Show password"
+                                Image(
+                                    painter = if (passwordVisible) painterResource(R.drawable.eye)
+                                    else painterResource(R.drawable.hide),
+                                    contentDescription = if (passwordVisible) "Hide password" else "Show password",
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         },
@@ -291,9 +237,11 @@ fun LoginScreen(
                                 IconButton(onClick = {
                                     confirmPasswordVisible = !confirmPasswordVisible
                                 }) {
-                                    Icon(
-                                        if (confirmPasswordVisible) Icons.Default.Edit else Icons.Default.Edit,
-                                        contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password"
+                                    Image(
+                                        painter = if (confirmPasswordVisible) painterResource(R.drawable.eye)
+                                        else painterResource(R.drawable.hide),
+                                        contentDescription = if (confirmPasswordVisible) "Hide password" else "Show password",
+                                        modifier = Modifier.size(20.dp)
                                     )
                                 }
                             },
@@ -315,10 +263,10 @@ fun LoginScreen(
                                 focusedBorderColor = Color(0xFFF28C20),
                                 focusedLabelColor = Color(0xFFF28C20)
                             ),
-                            isError = !isLoginMode && confirmPassword.isNotEmpty() && password != confirmPassword
+                            isError = confirmPassword.isNotEmpty() && password != confirmPassword
                         )
 
-                        if (!isLoginMode && confirmPassword.isNotEmpty() && password != confirmPassword) {
+                        if (confirmPassword.isNotEmpty() && password != confirmPassword) {
                             Text(
                                 text = "Passwords don't match",
                                 color = MaterialTheme.colorScheme.error,

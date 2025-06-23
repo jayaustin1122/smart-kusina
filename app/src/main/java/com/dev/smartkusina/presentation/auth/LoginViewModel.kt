@@ -7,26 +7,14 @@ import com.dev.smartkusina.domain.usecase.LoginUserUseCase
 import com.dev.smartkusina.domain.usecase.RegisterUserUseCase
 import com.dev.smartkusina.domain.usecase.GetCurrentUserUseCase
 import com.dev.smartkusina.domain.usecase.LogoutUserUseCase
+import com.dev.smartkusina.presentation.auth.state.AuthAction
+import com.dev.smartkusina.presentation.auth.state.AuthState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
-
-sealed class AuthState {
-    object Loading : AuthState()
-    object Unauthenticated : AuthState()
-    data class Authenticated(val user: UserEntity) : AuthState()
-    data class Error(val message: String) : AuthState()
-}
-
-sealed class AuthAction {
-    object LoginSuccess : AuthAction()
-    object RegisterSuccess : AuthAction()
-    object LogoutSuccess : AuthAction()
-    data class Error(val message: String) : AuthAction()
-}
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(

@@ -30,9 +30,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.dev.smartkusina.presentation.auth.AuthAction
-import com.dev.smartkusina.presentation.auth.AuthState
 import com.dev.smartkusina.presentation.auth.LoginViewModel
+import com.dev.smartkusina.presentation.auth.state.AuthAction
+import com.dev.smartkusina.presentation.auth.state.AuthState
 
 
 @OptIn(ExperimentalMaterial3Api::class)

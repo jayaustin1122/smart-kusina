@@ -3,9 +3,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.dev.smartkusina.presentation.auth.AuthState
 import com.dev.smartkusina.presentation.auth.LoginScreen
 import com.dev.smartkusina.presentation.auth.LoginViewModel
+import com.dev.smartkusina.presentation.auth.state.AuthState
 import com.dev.smartkusina.presentation.home.HomeScreen
 import com.dev.smartkusina.presentation.main.SplashScreen
 import kotlinx.coroutines.delay

@@ -16,7 +16,6 @@ class UserRepositoryImpl @Inject constructor(
         try {
             val user = userDao.signInUser(name, password)
             if (user != null) {
-                // Set user as logged in
                 userDao.setUserLoggedIn(user.userId)
                 // userDao.createUserSession(user.userId, System.currentTimeMillis())
             }
@@ -28,14 +27,12 @@ class UserRepositoryImpl @Inject constructor(
 
     override suspend fun registerUser(user: UserEntity): Flow<Boolean> = flow {
         try {
-            // Check if name already exists
             val nameExists = userDao.checkNameExists(user.name) > 0
             if (nameExists) {
                 emit(false)
                 return@flow
             }
 
-            // Register the user (ID will be auto-generated)
             userDao.signUpUser(user)
             emit(true)
             Log.d("UserRepositoryImpl", "registerUser: User registered successfully with name: ${user.name}")

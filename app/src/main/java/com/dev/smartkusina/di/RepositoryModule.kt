@@ -1,19 +1,30 @@
 package com.dev.smartkusina.di
 
 import com.dev.smartkusina.data.local.dao.UserDao
+import com.dev.smartkusina.data.remote.the_meal.RandomMealService
+import com.dev.smartkusina.data.repository.GetRandomMealRepositoryImpl
 import com.dev.smartkusina.data.repository.UserRepositoryImpl
+import com.dev.smartkusina.domain.repository.MealRepository
 import com.dev.smartkusina.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
 
     @Provides
+    @Singleton
     fun provideUserRepository(userDao: UserDao): UserRepository {
         return UserRepositoryImpl(userDao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideMealRepository(@ThemeAlDBRetrofit randomMealService: RandomMealService): MealRepository {
+        return GetRandomMealRepositoryImpl(randomMealService)
     }
 }

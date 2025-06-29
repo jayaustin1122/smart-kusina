@@ -83,6 +83,9 @@ dependencies {
     implementation (libs.androidx.room.runtime)
     implementation (libs.androidx.room.ktx)
     kapt (libs.androidx.room.compiler)
+    implementation (libs.kotlin.reflect)
+    implementation(libs.accompanist.swiperefresh)
+
 
     //shimmer
     implementation (libs.compose.shimmer)

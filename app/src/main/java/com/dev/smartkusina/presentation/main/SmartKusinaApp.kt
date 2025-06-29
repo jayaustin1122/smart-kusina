@@ -7,6 +7,8 @@ import com.dev.smartkusina.presentation.auth.LoginScreen
 import com.dev.smartkusina.presentation.auth.LoginViewModel
 import com.dev.smartkusina.presentation.auth.state.AuthState
 import com.dev.smartkusina.presentation.home.HomeScreen
+import com.dev.smartkusina.presentation.home.RecipeDetailScreen
+import com.dev.smartkusina.presentation.home.RecipeDetailViewModel
 import com.dev.smartkusina.presentation.main.SplashScreen
 import kotlinx.coroutines.delay
 
@@ -54,8 +56,25 @@ fun SmartKusinaApp() {
                     navController.navigate("login") {
                         popUpTo("home") { inclusive = true }
                     }
+                },
+                onNavigateToRecipeDetail = { recipeId ->
+                    navController.navigate("recipeDetail/$recipeId")
                 }
             )
+        }
+        composable("recipeDetail/{recipeId}") { backStackEntry ->
+            val recipeId = backStackEntry.arguments?.getString("recipeId")
+            if (recipeId != null) {
+                val viewModel: RecipeDetailViewModel = hiltViewModel()
+                viewModel.fetchMealDetails(recipeId)
+                RecipeDetailScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = {
+                        navController.popBackStack()
+                    },
+                    mealId = recipeId
+                )
+            }
         }
     }
 }

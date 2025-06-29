@@ -1,6 +1,7 @@
 package com.dev.smartkusina.di
 
 
+import com.dev.smartkusina.data.remote.the_meal.DetailMealService
 import com.dev.smartkusina.data.remote.the_meal.RandomMealService
 import dagger.Module
 import dagger.Provides
@@ -73,5 +74,13 @@ object NetworkModule {
     fun provideLoginService(@ThemeAlDBRetrofit retrofit: Retrofit): RandomMealService {
         return retrofit.create(RandomMealService::class.java)
     }
+
+    @Provides
+    @Singleton
+    @ThemeAlDBRetrofit
+    fun provideDetailMealService(@ThemeAlDBRetrofit retrofit: Retrofit): DetailMealService {
+        return retrofit.create(DetailMealService::class.java)
+    }
+
 
 }

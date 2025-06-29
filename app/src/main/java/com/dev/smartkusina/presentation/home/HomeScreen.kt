@@ -27,6 +27,7 @@ import com.dev.smartkusina.presentation.auth.LoginViewModel
 import com.dev.smartkusina.presentation.auth.state.AuthAction
 import com.dev.smartkusina.presentation.auth.state.AuthState
 import com.dev.smartkusina.presentation.favorites.FavoritesScreen
+import com.dev.smartkusina.presentation.favorites.FavoritesViewModel
 import com.dev.smartkusina.presentation.profile.ProfileContent
 import com.dev.smartkusina.util.HomeTab
 import com.dev.smartkusina.util.Response
@@ -39,13 +40,15 @@ fun HomeScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToRecipeDetail: (String) -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
-    homeViewModel: HomeViewModel = hiltViewModel()
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    favoritesViewModel: FavoritesViewModel = hiltViewModel()
 ) {
 
     val authState by viewModel.authState.collectAsState()
     val authAction by viewModel.authAction.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val mealsState by homeViewModel.mealsState.collectAsState()
+    val favoriteIds by favoritesViewModel.favoriteIds.collectAsState()
     val isRefreshing = mealsState is Response.Loading
     var selectedTab by remember { mutableStateOf(HomeTab.HOME) }
 
@@ -125,14 +128,22 @@ fun HomeScreen(
                 HomeTab.HOME -> HomeContent(
                     authState = authState,
                     mealsState = mealsState,
-                    onRecipeClick = onNavigateToRecipeDetail
+                    favoriteIds = favoriteIds,
+                    onRecipeClick = onNavigateToRecipeDetail,
+                    onFavoriteClick = { recipeId ->
+                        favoritesViewModel.toggleFavorite(recipeId)
+                    }
                 )
                 HomeTab.RECIPES -> RecipesContent(
                     mealsState = mealsState,
                     onRecipeClick = onNavigateToRecipeDetail
                 )
-                HomeTab.FAVORITES -> FavoritesScreen()
                 HomeTab.PROFILE -> ProfileContent(authState = authState)
+                HomeTab.FAVORITES -> {
+                    FavoritesScreen(
+                        onRecipeClick = onNavigateToRecipeDetail
+                    )
+                }
             }
         }
     }
@@ -142,7 +153,9 @@ fun HomeScreen(
 fun HomeContent(
     authState: AuthState,
     mealsState: Response<List<Meal>>,
-    onRecipeClick: (String) -> Unit
+    favoriteIds: Set<String>,
+    onRecipeClick: (String) -> Unit,
+    onFavoriteClick: (String) -> Unit
 ) {
     val isRefreshing = mealsState is Response.Loading
     val homeViewModel: HomeViewModel = hiltViewModel()
@@ -197,7 +210,9 @@ fun HomeContent(
                     items(meals) { meal ->
                         MealCard(
                             meal = meal,
-                            onClick = { onRecipeClick(meal.idMeal) }
+                            onClick = { onRecipeClick(meal.idMeal) },
+                            isFavorite = favoriteIds.contains(meal.idMeal),
+                            onFavoriteClick = { onFavoriteClick(meal.idMeal) }
                         )
                     }
                 }
@@ -242,7 +257,9 @@ fun WelcomeCard(userName: String) {
 @Composable
 fun MealCard(
     meal: Meal,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    isFavorite: Boolean = false,
+    onFavoriteClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = Modifier
@@ -291,6 +308,18 @@ fun MealCard(
                         text = it,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
+                    )
+                }
+            }
+
+            onFavoriteClick?.let { callback ->
+                IconButton(
+                    onClick = { callback() }
+                ) {
+                    Icon(
+                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                        tint = if (isFavorite) Color.Red else Color.Gray
                     )
                 }
             }

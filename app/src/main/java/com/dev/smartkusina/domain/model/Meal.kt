@@ -8,6 +8,6 @@ data class Meal(
     val strInstructions: String?,
     val strMealThumb: String?,
     val strYoutube: String?,
-    val ingredients: List<String?>,
-    val measures: List<String?>
+    val ingredients: List<String?> = emptyList(),
+    val measures: List<String?> = emptyList()
 )

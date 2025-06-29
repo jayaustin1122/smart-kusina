@@ -1,11 +1,14 @@
 package com.dev.smartkusina.di
 
+import com.dev.smartkusina.data.local.dao.FavoritesDao
 import com.dev.smartkusina.data.local.dao.UserDao
 import com.dev.smartkusina.data.remote.the_meal.DetailMealService
 import com.dev.smartkusina.data.remote.the_meal.RandomMealService
+import com.dev.smartkusina.data.repository.FavoritesRepositoryImpl
 import com.dev.smartkusina.data.repository.GetMealDetailRepositoryImpl
 import com.dev.smartkusina.data.repository.GetRandomMealRepositoryImpl
 import com.dev.smartkusina.data.repository.UserRepositoryImpl
+import com.dev.smartkusina.domain.repository.FavoritesRepository
 import com.dev.smartkusina.domain.repository.MealDetailRepository
 import com.dev.smartkusina.domain.repository.MealRepository
 import com.dev.smartkusina.domain.repository.UserRepository
@@ -35,5 +38,11 @@ object RepositoryModule {
     @Singleton
     fun provideMealDetailRepository(@ThemeAlDBRetrofit detailMealService: DetailMealService): MealDetailRepository {
         return GetMealDetailRepositoryImpl(detailMealService)
+    }
+
+    @Provides
+    @Singleton
+    fun provideFavoritesRepository(favoritesDao: FavoritesDao): FavoritesRepository {
+        return FavoritesRepositoryImpl(favoritesDao)
     }
 }

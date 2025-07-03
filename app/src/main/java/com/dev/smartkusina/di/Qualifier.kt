@@ -8,7 +8,7 @@ annotation class SpoonacularRetrofit
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
-annotation class EdamamRetrofit
+annotation class DummyJsonRetrofit
 
 @Qualifier
 @Retention(AnnotationRetention.BINARY)

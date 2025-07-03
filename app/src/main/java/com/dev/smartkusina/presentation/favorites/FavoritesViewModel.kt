@@ -32,9 +32,52 @@ class FavoritesViewModel @Inject constructor(
     private val _favoriteIds = MutableStateFlow<Set<String>>(emptySet())
     val favoriteIds: StateFlow<Set<String>> = _favoriteIds
 
+    private val _mealDetailsList = MutableStateFlow<Response<List<MealDetails>>>(Response.Loading())
+    val mealDetailsList: StateFlow<Response<List<MealDetails>>> = _mealDetailsList
+
     init {
         loadFavorites()
     }
+
+    fun fetchMultipleMealDetails(mealIds: List<String>) {
+        viewModelScope.launch {
+            try {
+                _mealDetailsList.value = Response.Loading()
+                val detailsList = mutableListOf<MealDetails>()
+
+                for (mealId in mealIds) {
+                    try {
+                        val response = getMealDetailsUseCase(mealId).first()
+                        when (response) {
+                            is Response.Success -> {
+                                response.data?.let {
+                                    detailsList.add(it)
+                                } ?: Log.w("FavoritesViewModel", "Null data for mealId: $mealId")
+                            }
+                            is Response.Error -> {
+                                Log.e("FavoritesViewModel", "Error fetching mealId $mealId: ${response.message}")
+                            }
+                            else -> {
+                                Log.d("FavoritesViewModel", "Still loading mealId: $mealId")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("FavoritesViewModel", "Exception for mealId $mealId: ${e.message}")
+                    }
+                }
+
+                Log.d("FavoritesViewModel", "fetchMultipleMealDetails: Successfully fetched ${detailsList.size} meals")
+                detailsList.forEach { meal ->
+                    Log.d("FavoritesViewModel", "Meal: ${meal.name} (ID: ${meal.id})")
+                }
+
+                _mealDetailsList.value = Response.Success(detailsList)
+            } catch (e: Exception) {
+                Log.e("FavoritesViewModel", "General exception: ${e.message}", e)
+            }
+        }
+    }
+
 
     fun loadFavorites() {
         viewModelScope.launch {
@@ -46,51 +89,26 @@ class FavoritesViewModel @Inject constructor(
                 Log.d("FavoritesViewModel", "loadFavorites: Retrieved ${favoriteIdsList.size} favorite IDs: $favoriteIdsList")
                 _favoriteIds.value = favoriteIdsList.toSet()
 
-                // Get meal details for each favorite ID
-                val favoriteMealsList = mutableListOf<MealDetails>()
-                for (id in favoriteIdsList) {
-                    try {
-                        Log.d("FavoritesViewModel", "loadFavorites: Fetching details for meal ID: $id")
-                        when (val response = getMealDetailsUseCase(id).first()) {
-                            is Response.Success -> {
-                                response.data?.let { mealDetails ->
-                                    Log.d("FavoritesViewModel", "loadFavorites: Successfully loaded meal: ${mealDetails.name} (ID: ${mealDetails.id})")
-                                    favoriteMealsList.add(mealDetails)
-                                } ?: run {
-                                    Log.w("FavoritesViewModel", "loadFavorites: Meal details is null for ID: $id")
-                                }
-                            }
-                            is Response.Error -> {
-                                Log.e("FavoritesViewModel", "loadFavorites: Error loading meal ID $id: ${response.message}")
-                            }
-                            is Response.Loading -> {
-                                Log.d("FavoritesViewModel", "loadFavorites: Still loading meal ID: $id")
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e("FavoritesViewModel", "loadFavorites: Exception while fetching meal ID $id: ${e.message}", e)
-                        continue
-                    }
-                }
+                fetchMultipleMealDetails(favoriteIdsList)
 
-                Log.d("FavoritesViewModel", "loadFavorites: Successfully loaded ${favoriteMealsList.size} meal details out of ${favoriteIdsList.size} favorites")
-                _favoriteMeals.value = Response.Success(favoriteMealsList)
+                val detailsResult = _mealDetailsList.value
+                _favoriteMeals.value = detailsResult
 
             } catch (e: Exception) {
                 Log.e("FavoritesViewModel", "loadFavorites: Main exception occurred: ${e.message}", e)
 
-                // Still try to load favorite IDs for toggle functionality
                 try {
-                    val favoriteIdsList = getFavoritesUseCase()
-                    Log.d("FavoritesViewModel", "loadFavorites: Fallback - Retrieved ${favoriteIdsList.size} favorite IDs for toggle functionality")
-                    _favoriteIds.value = favoriteIdsList.toSet()
+                    val fallbackIds = getFavoritesUseCase()
+                    _favoriteIds.value = fallbackIds.toSet()
                 } catch (idsException: Exception) {
-                    Log.e("FavoritesViewModel", "loadFavorites: Failed to load favorite IDs in fallback: ${idsException.message}", idsException)
+                    Log.e("FavoritesViewModel", "loadFavorites: Fallback failed to load favorite IDs: ${idsException.message}", idsException)
                     _favoriteIds.value = emptySet()
                 }
+
             }
         }
     }
+
 
     fun toggleFavorite(recipeId: String) {
         viewModelScope.launch {

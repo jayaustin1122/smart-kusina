@@ -48,10 +48,10 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @EdamamRetrofit
-    fun provideEdamamRetrofit(okHttpClient: OkHttpClient): Retrofit {
+    @DummyJsonRetrofit
+    fun provideDummyJsonRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl("https://api.edamam.com/")
+            .baseUrl("https://dummyjson.com/")
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient)
             .build()

@@ -4,20 +4,28 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("com.google.dagger.hilt.android")
     id("org.jetbrains.kotlin.kapt")
+    id ("kotlin-kapt")
 }
 
 android {
     namespace = "com.dev.smartkusina"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.dev.smartkusina"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField(
+            "String",
+            "SPOONACULAR_API_KEY",
+            "\"${project.findProperty("SPOONACULAR_API_KEY")}\""
+        )
+
     }
 
     buildTypes {
@@ -38,6 +46,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -82,6 +91,9 @@ dependencies {
     implementation (libs.androidx.room.runtime)
     implementation (libs.androidx.room.ktx)
     kapt (libs.androidx.room.compiler)
+    implementation (libs.kotlin.reflect)
+    implementation(libs.accompanist.swiperefresh)
+
 
     //shimmer
     implementation (libs.compose.shimmer)

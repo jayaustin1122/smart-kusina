@@ -22,7 +22,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.dev.smartkusina.domain.model.Meal
+import com.dev.smartkusina.composables.ErrorCard
 import com.dev.smartkusina.domain.model.MealDetails
 import com.dev.smartkusina.domain.model.Recipes
 import com.dev.smartkusina.util.Response

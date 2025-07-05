@@ -1,3 +1,4 @@
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -6,9 +7,11 @@ import androidx.navigation.compose.rememberNavController
 import com.dev.smartkusina.presentation.auth.LoginScreen
 import com.dev.smartkusina.presentation.auth.LoginViewModel
 import com.dev.smartkusina.presentation.auth.state.AuthState
-import com.dev.smartkusina.presentation.home.HomeScreen
+import com.dev.smartkusina.presentation.HomeScreen
+import com.dev.smartkusina.presentation.home.HomeViewModel
 import com.dev.smartkusina.presentation.home.RecipeDetailScreen
 import com.dev.smartkusina.presentation.home.RecipeDetailViewModel
+import com.dev.smartkusina.presentation.home.SpoonRecipeDetails
 import com.dev.smartkusina.presentation.main.SplashScreen
 import kotlinx.coroutines.delay
 
@@ -59,6 +62,9 @@ fun SmartKusinaApp() {
                 },
                 onNavigateToRecipeDetail = { recipeId ->
                     navController.navigate("recipeDetail/$recipeId")
+                },
+                onNavigateToSpoonDetails = {
+                    navController.navigate("spoonDetail/$it")
                 }
             )
         }
@@ -76,5 +82,20 @@ fun SmartKusinaApp() {
                 )
             }
         }
+        composable("spoonDetail/{mealId}") {
+            val selectedRecipeViewModel: HomeViewModel = hiltViewModel()
+            val recipe = selectedRecipeViewModel.selectedRecipe
+
+            if (recipe != null) {
+                SpoonRecipeDetails(
+                    mealId = recipe.id.toString(),
+                    recipe = recipe,
+                    onNavigateBack = { navController.popBackStack() }
+                )
+            } else {
+                Text("Recipe not found")
+            }
+        }
+
     }
 }

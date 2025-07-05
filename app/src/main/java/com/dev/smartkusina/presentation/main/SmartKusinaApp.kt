@@ -1,9 +1,12 @@
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import com.dev.smartkusina.presentation.auth.LoginScreen
 import com.dev.smartkusina.presentation.auth.LoginViewModel
 import com.dev.smartkusina.presentation.auth.state.AuthState
@@ -14,6 +17,7 @@ import com.dev.smartkusina.presentation.home.RecipeDetailViewModel
 import com.dev.smartkusina.presentation.home.SpoonRecipeDetails
 import com.dev.smartkusina.presentation.main.SplashScreen
 import kotlinx.coroutines.delay
+import java.lang.reflect.Modifier
 
 @Composable
 fun SmartKusinaApp() {
@@ -22,7 +26,6 @@ fun SmartKusinaApp() {
     val authState by loginViewModel.authState.collectAsState()
 
     var showSplash by remember { mutableStateOf(true) }
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         delay(5000)
@@ -68,6 +71,7 @@ fun SmartKusinaApp() {
                 }
             )
         }
+
         composable("recipeDetail/{recipeId}") { backStackEntry ->
             val recipeId = backStackEntry.arguments?.getString("recipeId")
             if (recipeId != null) {
@@ -82,20 +86,24 @@ fun SmartKusinaApp() {
                 )
             }
         }
+
         composable("spoonDetail/{mealId}") {
-            val selectedRecipeViewModel: HomeViewModel = hiltViewModel()
+            val parentEntry = remember(it) {
+                navController.getBackStackEntry("home")
+            }
+            val selectedRecipeViewModel: HomeViewModel = hiltViewModel(parentEntry)
             val recipe = selectedRecipeViewModel.selectedRecipe
 
             if (recipe != null) {
                 SpoonRecipeDetails(
-                    mealId = recipe.id.toString(),
                     recipe = recipe,
                     onNavigateBack = { navController.popBackStack() }
                 )
             } else {
-                Text("Recipe not found")
+                Column {
+                    Text(text = "Recipe not found")
+                }
             }
         }
-
     }
 }

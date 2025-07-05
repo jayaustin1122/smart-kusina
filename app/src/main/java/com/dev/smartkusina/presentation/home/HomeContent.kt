@@ -20,8 +20,13 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,18 +46,17 @@ import com.dev.smartkusina.util.Response
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 
-
 @Composable
 fun HomeContent(
     authState: AuthState,
     spoonRecipeState: Response<List<SpoonRecipe>>,
     similarState: Response<List<SimilarRecipe>>,
     onRecipeClick: (String) -> Unit,
-//    favoriteIds: Set<String>
-//    onFavoriteClick: (String) -> Unit
 ) {
     val isRefreshing = spoonRecipeState is Response.Loading
     val homeViewModel: HomeViewModel = hiltViewModel()
+
+    var searchQuery by remember { mutableStateOf("") }
 
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing),
@@ -79,6 +83,16 @@ fun HomeContent(
             }
 
             item {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search recipes...") },
+                    singleLine = true
+                )
+            }
+
+            item {
                 Text(
                     text = "Featured Recipes",
                     style = MaterialTheme.typography.headlineSmall,
@@ -101,13 +115,26 @@ fun HomeContent(
 
                 is Response.Success -> {
                     val meals = spoonRecipeState.data.orEmpty()
-                    items(meals) { meal ->
-                        MealCardSpoon(
-                            meal = meal,
-                            onClick = {
-                                homeViewModel.setRecipe(meal)
-                                onRecipeClick(meal.id.toString())  }
-                        )
+                    val filteredMeals = meals.filter { it.title.contains(searchQuery, ignoreCase = true) }
+
+                    if (filteredMeals.isEmpty()) {
+                        item {
+                            Text(
+                                text = "No recipes found.",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        items(filteredMeals) { meal ->
+                            MealCardSpoon(
+                                meal = meal,
+                                onClick = {
+                                    homeViewModel.setRecipe(meal)
+                                    onRecipeClick(meal.id.toString())
+                                }
+                            )
+                        }
                     }
                 }
 
@@ -121,6 +148,7 @@ fun HomeContent(
         }
     }
 }
+
 
 
 

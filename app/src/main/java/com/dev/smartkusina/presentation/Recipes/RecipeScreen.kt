@@ -24,8 +24,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +51,8 @@ fun RecipesContent(
     onRecipeClick: (String) -> Unit,
     onFavoriteClick: (String) -> Unit
 ) {
+
+    var searchQuery by remember { mutableStateOf("") }
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -58,6 +65,16 @@ fun RecipesContent(
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFFF28C20)
+            )
+        }
+
+        item {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search recipes...") },
+                singleLine = true
             )
         }
 
@@ -74,13 +91,26 @@ fun RecipesContent(
             }
             is Response.Success -> {
                 val meals = mealsState.data.orEmpty()
-                items(meals) { meal ->
-                    MealCard(
-                        meal = meal,
-                        onClick = { onRecipeClick(meal.idMeal) },
-                        isFavorite = favoriteIds.contains(meal.idMeal),
-                        onFavoriteClick = { onFavoriteClick(meal.idMeal) }
-                    )
+                val filteredMeals = meals.filter { it.strMeal.contains(searchQuery, ignoreCase = true) }
+                if (filteredMeals.isEmpty()) {
+                    item {
+                        Text(
+                            text = "No recipes found",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+                else{
+                    items(filteredMeals) { meal ->
+                        MealCard(
+                            meal = meal,
+                            onClick = { onRecipeClick(meal.idMeal) },
+                            isFavorite = favoriteIds.contains(meal.idMeal),
+                            onFavoriteClick = { onFavoriteClick(meal.idMeal) }
+                        )
+                    }
                 }
             }
             is Response.Error -> {

@@ -36,6 +36,11 @@ class HomeViewModel @Inject constructor(
     var selectedRecipe by mutableStateOf<SpoonRecipe?>(null)
         private set
 
+    init {
+        fetchRandomMeals()
+        fetchRandomSpoonRecipes()
+    }
+
     fun setRecipe(recipe: SpoonRecipe) {
         selectedRecipe = recipe
     }
@@ -62,5 +67,12 @@ class HomeViewModel @Inject constructor(
                 _similarRecipesState.value = response
             }
         }
+    }
+
+    fun refreshData() {
+        _mealsState.value = Response.Loading()
+        _spoonRecipesState.value = Response.Loading()
+        fetchRandomMeals()
+        fetchRandomSpoonRecipes()
     }
 }

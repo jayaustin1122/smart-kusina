@@ -20,7 +20,10 @@ class GetRandomMealRepositoryImpl @Inject constructor(
             val seenIds = mutableSetOf<String>()
 
             var attempts = 0
-            while (meals.size < 10 && attempts < 20) {
+            val maxMeals = 80
+            val maxAttempts = 200
+
+            while (meals.size < maxMeals && attempts < maxAttempts) {
                 val response = randomMealService.getRandomMeal()
                 val meal = response.meals.firstOrNull()?.toMeal()
 

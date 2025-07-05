@@ -1,6 +1,8 @@
 package com.dev.smartkusina.di
 
 
+import com.dev.smartkusina.data.remote.dummyjson.DummyjsonService
+import com.dev.smartkusina.data.remote.spoonacular.SpoonService
 import com.dev.smartkusina.data.remote.the_meal.DetailMealService
 import com.dev.smartkusina.data.remote.the_meal.RandomMealService
 import dagger.Module
@@ -82,5 +84,17 @@ object NetworkModule {
         return retrofit.create(DetailMealService::class.java)
     }
 
+    @Provides
+    @Singleton
+    @DummyJsonRetrofit
+    fun provideDummyjsonService(@DummyJsonRetrofit retrofit: Retrofit): DummyjsonService {
+        return retrofit.create(DummyjsonService::class.java)
+    }
 
+    @Provides
+    @Singleton
+    @SpoonacularRetrofit
+    fun provideSpoonService(@SpoonacularRetrofit retrofit: Retrofit): SpoonService {
+        return retrofit.create(SpoonService::class.java)
+    }
 }

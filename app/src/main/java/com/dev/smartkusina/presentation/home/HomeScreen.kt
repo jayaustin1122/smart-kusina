@@ -1,5 +1,6 @@
 package com.dev.smartkusina.presentation.home
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,6 +49,7 @@ fun HomeScreen(
     val authAction by viewModel.authAction.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val mealsState by homeViewModel.mealsState.collectAsState()
+    val spoonRecipe by homeViewModel.spoonRecipesState.collectAsState()
     val favoriteIds by favoritesViewModel.favoriteIds.collectAsState()
     val isRefreshing = mealsState is Response.Loading
     var selectedTab by remember { mutableStateOf(HomeTab.HOME) }
@@ -58,6 +60,12 @@ fun HomeScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        if (homeViewModel.spoonRecipesState.value !is Response.Success) {
+            homeViewModel.fetchRandomSpoonRecipes()
+            Log.d("HomeScreen", "HomeScreen: value : ${homeViewModel.spoonRecipesState.value}")
+        }
+    }
     LaunchedEffect(authAction) {
         authAction?.let { action ->
             when (action) {

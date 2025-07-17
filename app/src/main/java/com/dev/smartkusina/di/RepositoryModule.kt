@@ -1,5 +1,7 @@
 package com.dev.smartkusina.di
+import android.content.Context
 import com.dev.smartkusina.BuildConfig
+import com.dev.smartkusina.data.local.SharedPreferencesManager
 import com.dev.smartkusina.data.local.dao.FavoritesDao
 import com.dev.smartkusina.data.local.dao.UserDao
 import com.dev.smartkusina.data.remote.dummyjson.DummyjsonService
@@ -23,6 +25,7 @@ import com.dev.smartkusina.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -73,5 +76,11 @@ object RepositoryModule {
     ): SimilarSpoonRecipeRepository {
         val apiKey = BuildConfig.SPOONACULAR_API_KEY
         return GetSimilarSpoonRecipeImpl(spoonService, apiKey)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSharedPreferencesManager(@ApplicationContext context: Context): SharedPreferencesManager {
+        return SharedPreferencesManager(context)
     }
 }

@@ -9,8 +9,10 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dev.smartkusina.R
 import com.dev.smartkusina.composables.LoadingScreen
@@ -56,23 +59,53 @@ fun LoginScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogType by remember { mutableStateOf(DialogType.SUCCESS) }
+    var dialogMessage by remember { mutableStateOf("") }
 
     val focusManager = LocalFocusManager.current
 
     LaunchedEffect(authAction) {
         authAction?.let { action ->
             when (action) {
-                is AuthAction.LoginSuccess -> {}
+                is AuthAction.LoginSuccess -> {
+                    dialogType = DialogType.SUCCESS
+                    dialogMessage = "Login successful! Welcome back."
+                    showDialog = true
+                }
                 is AuthAction.RegisterSuccess -> {
+                    dialogType = DialogType.SUCCESS
+                    dialogMessage = "Account created successfully! Please login."
+                    showDialog = true
                     isLoginMode = true
                     password = ""
                     confirmPassword = ""
                 }
-                is AuthAction.Error -> {}
+                is AuthAction.Error -> {
+                    dialogType = DialogType.ERROR
+                    dialogMessage = action.message
+                    showDialog = true
+                }
                 AuthAction.LogoutSuccess -> {}
             }
             viewModel.clearAuthAction()
         }
+    }
+
+    // Auth Dialog
+    if (showDialog) {
+        AuthDialog(
+            dialogType = dialogType,
+            message = dialogMessage,
+            onDismiss = { showDialog = false }
+        )
+    }
+
+    // Loading Dialog
+    if (isLoading) {
+        LoadingDialog(
+            message = if (isLoginMode) "Signing in..." else "Creating account..."
+        )
     }
 
     Box(
@@ -172,6 +205,7 @@ fun LoginScreen(
                         label = { Text(if (isLoginMode) "Name" else "Full Name") },
                         leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
@@ -193,7 +227,10 @@ fun LoginScreen(
                         label = { Text("Password") },
                         leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                         trailingIcon = {
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            IconButton(
+                                onClick = { passwordVisible = !passwordVisible },
+                                enabled = !isLoading
+                            ) {
                                 Image(
                                     painter = if (passwordVisible) painterResource(R.drawable.eye)
                                     else painterResource(R.drawable.hide),
@@ -204,6 +241,7 @@ fun LoginScreen(
                         },
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !isLoading,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = if (isLoginMode) ImeAction.Done else ImeAction.Next
@@ -234,9 +272,10 @@ fun LoginScreen(
                             label = { Text("Confirm Password") },
                             leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                             trailingIcon = {
-                                IconButton(onClick = {
-                                    confirmPasswordVisible = !confirmPasswordVisible
-                                }) {
+                                IconButton(
+                                    onClick = { confirmPasswordVisible = !confirmPasswordVisible },
+                                    enabled = !isLoading
+                                ) {
                                     Image(
                                         painter = if (confirmPasswordVisible) painterResource(R.drawable.eye)
                                         else painterResource(R.drawable.hide),
@@ -247,6 +286,7 @@ fun LoginScreen(
                             },
                             visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                             modifier = Modifier.fillMaxWidth(),
+                            enabled = !isLoading,
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Password,
                                 imeAction = ImeAction.Done
@@ -291,37 +331,18 @@ fun LoginScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        enabled = !isLoading,
+                        enabled = !isLoading && name.isNotEmpty() && password.isNotEmpty() &&
+                                (isLoginMode || password == confirmPassword),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFF28C20)
                         ),
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        } else {
-                            Text(
-                                text = if (isLoginMode) "Sign In" else "Create Account",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    authAction?.let { action ->
-                        if (action is AuthAction.Error) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = action.message,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
+                        Text(
+                            text = if (isLoginMode) "Sign In" else "Create Account",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
@@ -329,4 +350,86 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(40.dp))
         }
     }
+}
+
+enum class DialogType {
+    SUCCESS, ERROR
+}
+
+@Composable
+fun AuthDialog(
+    dialogType: DialogType,
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Icon(
+                imageVector = if (dialogType == DialogType.SUCCESS)
+                    Icons.Default.CheckCircle else Icons.Default.Warning,
+                contentDescription = null,
+                tint = if (dialogType == DialogType.SUCCESS)
+                    Color(0xFF4CAF50) else Color(0xFFE57373),
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        title = {
+            Text(
+                text = if (dialogType == DialogType.SUCCESS) "Success" else "Error",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        },
+        text = {
+            Text(
+                text = message,
+                style = MaterialTheme.typography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (dialogType == DialogType.SUCCESS)
+                        Color(0xFF4CAF50) else Color(0xFFF28C20)
+                )
+            ) {
+                Text("OK", color = Color.White)
+            }
+        }
+    )
+}
+
+@Composable
+fun LoadingDialog(
+    message: String
+) {
+    AlertDialog(
+        onDismissRequest = { },
+        text = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                CircularProgressIndicator(
+                    color = Color(0xFFF28C20),
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(16.dp))
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        },
+        confirmButton = { },
+        properties = DialogProperties(
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false
+        )
+    )
 }

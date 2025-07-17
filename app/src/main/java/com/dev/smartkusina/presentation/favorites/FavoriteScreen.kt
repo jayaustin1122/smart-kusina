@@ -20,7 +20,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.dev.smartkusina.domain.model.Meal
 import com.dev.smartkusina.domain.model.MealDetails
 import com.dev.smartkusina.util.Response
 
@@ -197,7 +196,6 @@ fun FavoriteMealCard(
                 }
             }
 
-            // Favorite icon (always filled since this is in favorites)
             Icon(
                 imageVector = Icons.Filled.Favorite,
                 contentDescription = "Favorited",
@@ -207,7 +205,6 @@ fun FavoriteMealCard(
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Remove from favorites button
             IconButton(
                 onClick = { showDeleteDialog = true }
             ) {
@@ -220,7 +217,6 @@ fun FavoriteMealCard(
         }
     }
 
-    // Delete confirmation dialog
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },

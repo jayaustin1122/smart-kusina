@@ -1,4 +1,4 @@
-package com.dev.smartkusina.util
+package com.dev.smartkusina.presentation
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite

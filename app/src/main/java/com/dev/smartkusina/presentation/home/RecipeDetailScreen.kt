@@ -16,13 +16,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
-import com.dev.smartkusina.domain.model.Meal
+import com.dev.smartkusina.R
+import com.dev.smartkusina.composables.ErrorCard
 import com.dev.smartkusina.domain.model.MealDetails
 import com.dev.smartkusina.domain.model.Recipes
 import com.dev.smartkusina.util.Response
@@ -306,7 +308,7 @@ fun RecipeCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Star,
+                        painter = painterResource(R.drawable.baseline_health_and_safety_24),
                         contentDescription = null,
                         tint = Color(0xFFFFD700),
                         modifier = Modifier.size(12.dp)
@@ -400,7 +402,7 @@ fun RecipeBottomSheetContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Star,
+                            painter = painterResource(R.drawable.baseline_health_and_safety_24),
                             contentDescription = null,
                             tint = Color(0xFFFFD700),
                             modifier = Modifier.size(16.dp)

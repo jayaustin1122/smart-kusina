@@ -1,58 +1,38 @@
 package com.dev.smartkusina.data.remote.mapper
 
-import com.dev.smartkusina.data.remote.dto.AnalyzedInstructionDto
-import com.dev.smartkusina.data.remote.dto.EquipmentDto
-import com.dev.smartkusina.data.remote.dto.ExtendedIngredientDto
-import com.dev.smartkusina.data.remote.dto.IngredientDto
-import com.dev.smartkusina.data.remote.dto.LengthDto
-import com.dev.smartkusina.data.remote.dto.MeasuresDto
-import com.dev.smartkusina.data.remote.dto.MetricDto
-import com.dev.smartkusina.data.remote.dto.RecipeDto
-import com.dev.smartkusina.data.remote.dto.SpoonRecipeDto
-import com.dev.smartkusina.data.remote.dto.StepDto
-import com.dev.smartkusina.data.remote.dto.UsDto
-import com.dev.smartkusina.domain.model.AnalyzedInstruction
-import com.dev.smartkusina.domain.model.Equipment
-import com.dev.smartkusina.domain.model.ExtendedIngredient
-import com.dev.smartkusina.domain.model.IngredientRecipe
-import com.dev.smartkusina.domain.model.Length
-import com.dev.smartkusina.domain.model.Measures
-import com.dev.smartkusina.domain.model.Metric
-import com.dev.smartkusina.domain.model.Recipes
-import com.dev.smartkusina.domain.model.SpoonRecipe
-import com.dev.smartkusina.domain.model.Step
-import com.dev.smartkusina.domain.model.Us
+import com.dev.smartkusina.data.remote.dto.*
+import com.dev.smartkusina.domain.model.*
 
 fun RecipeDto.toDomain(): Recipes {
     return Recipes(
         id = id,
-        name = name,
-        ingredients = ingredients,
+        name = name ?: "Unknown",
+        ingredients = ingredients ?: emptyList(),
         instructions = instructions,
-        prepTimeMinutes = prepTimeMinutes,
-        cookTimeMinutes = cookTimeMinutes,
-        servings = servings,
-        difficulty = difficulty,
-        cuisine = cuisine,
-        caloriesPerServing = caloriesPerServing,
-        tags = tags,
+        prepTimeMinutes = prepTimeMinutes ?: 0,
+        cookTimeMinutes = cookTimeMinutes ?: 0,
+        servings = servings ?: 1,
+        difficulty = difficulty ?: "Unknown",
+        cuisine = cuisine ?: "Various",
+        caloriesPerServing = caloriesPerServing ?: 0,
+        tags = tags ?: emptyList(),
         userId = userId,
-        image = image,
-        rating = rating,
-        reviewCount = reviewCount,
-        mealType = mealType
+        image = image ?: "",
+        rating = rating ?: 0.0,
+        reviewCount = reviewCount ?: 0,
+        mealType = mealType ?: emptyList()
     )
 }
 
 fun SpoonRecipeDto.toDomain(): SpoonRecipe {
     return SpoonRecipe(
         id = id,
-        image = image,
-        imageType = imageType,
-        title = title,
+        image = image ?: "",
+        imageType = imageType ?: "jpg",
+        title = title ?: "Untitled Recipe",
         readyInMinutes = readyInMinutes,
         servings = servings,
-        sourceUrl = sourceUrl,
+        sourceUrl = sourceUrl ?: "",
         vegetarian = vegetarian,
         vegan = vegan,
         glutenFree = glutenFree,
@@ -63,82 +43,82 @@ fun SpoonRecipeDto.toDomain(): SpoonRecipe {
         sustainable = sustainable,
         lowFodmap = lowFodmap,
         weightWatcherSmartPoints = weightWatcherSmartPoints,
-        gaps = gaps,
+        gaps = gaps ?: "",
         preparationMinutes = preparationMinutes,
         cookingMinutes = cookingMinutes,
         aggregateLikes = aggregateLikes,
         healthScore = healthScore,
-        creditsText = creditsText,
-        license = license,
-        sourceName = sourceName,
+        creditsText = creditsText ?: "Unknown",
+        license = license ?: "N/A",
+        sourceName = sourceName ?: "Unknown",
         pricePerServing = pricePerServing,
-        extendedIngredients = extendedIngredients.map { it.toDomain() },
-        summary = summary,
-        cuisines = cuisines,
-        dishTypes = dishTypes,
-        diets = diets,
-        occasions = occasions,
-        instructions = instructions,
-        analyzedInstructions = analyzedInstructions.map { it.toDomain() },
+        extendedIngredients = extendedIngredients?.map { it.toDomain() } ?: emptyList(),
+        summary = summary ?: "No summary available",
+        cuisines = cuisines ?: emptyList(),
+        dishTypes = dishTypes ?: emptyList(),
+        diets = diets ?: emptyList(),
+        occasions = occasions ?: emptyList(),
+        instructions = instructions ?: "Instructions not available",
+        analyzedInstructions = analyzedInstructions?.map { it.toDomain() } ?: emptyList(),
         originalId = originalId,
         spoonacularScore = spoonacularScore,
-        spoonacularSourceUrl = spoonacularSourceUrl
+        spoonacularSourceUrl = spoonacularSourceUrl ?: ""
     )
 }
 
 fun ExtendedIngredientDto.toDomain(): ExtendedIngredient {
     return ExtendedIngredient(
         id = id,
-        aisle = aisle,
-        image = image,
-        consistency = consistency,
-        name = name,
-        nameClean = nameClean,
-        original = original,
-        originalName = originalName,
+        aisle = aisle ?: "",
+        image = image ?: "",
+        consistency = consistency ?: "solid",
+        name = name ?: "Unknown",
+        nameClean = nameClean ?: name,
+        original = original ?: "",
+        originalName = originalName ?: name,
         amount = amount,
-        unit = unit,
-        meta = meta,
+        unit = unit ?: "",
+        meta = meta ?: emptyList(),
         measures = measures.toDomain()
     )
 }
 
 fun MeasuresDto.toDomain(): Measures {
     return Measures(
-        us = us.toDomain(),
-        metric = metric.toDomain()
+        us = us?.toDomain() ?: Us(0.0, "", ""),
+        metric = metric?.toDomain() ?: Metric(0.0, "", "")
     )
 }
 
 fun UsDto.toDomain(): Us {
     return Us(
         amount = amount,
-        unitShort = unitShort,
-        unitLong = unitLong
+        unitShort = unitShort ?: "",
+        unitLong = unitLong ?: ""
     )
 }
 
 fun MetricDto.toDomain(): Metric {
     return Metric(
         amount = amount,
-        unitShort = unitShort,
-        unitLong = unitLong
+        unitShort = unitShort ?: "",
+        unitLong = unitLong ?: ""
     )
 }
 
 fun AnalyzedInstructionDto.toDomain(): AnalyzedInstruction {
     return AnalyzedInstruction(
-        name = name,
-        steps = steps.map { it.toDomain() }
+        name = name ?: "",
+        steps = steps?.map { it.toDomain() } ?: emptyList()
     )
 }
 
 fun StepDto.toDomain(): Step {
     return Step(
         number = number,
-        step = step,
-        ingredients = ingredients.map { it.toDomain() },
-        equipment = equipment.map { it.toDomain() },
+        step = step ?: "Step not available",
+        ingredients = ingredients?.map { it.toDomain() } ?: emptyList(),
+        equipment = equipment?.map { it.toDomain() } ?: emptyList(),
         length = length?.toDomain()
     )
 }
@@ -146,24 +126,24 @@ fun StepDto.toDomain(): Step {
 fun IngredientDto.toDomain(): IngredientRecipe {
     return IngredientRecipe(
         id = id,
-        name = name,
-        localizedName = localizedName,
-        image = image
+        name = name ?: "Unknown",
+        localizedName = localizedName ?: name ?: "Unknown",
+        image = image ?: ""
     )
 }
 
 fun EquipmentDto.toDomain(): Equipment {
     return Equipment(
         id = id,
-        name = name,
-        localizedName = localizedName,
-        image = image
+        name = name ?: "Unknown",
+        localizedName = localizedName ?: name ?: "Unknown",
+        image = image ?: ""
     )
 }
 
 fun LengthDto.toDomain(): Length {
     return Length(
         number = number,
-        unit = unit
+        unit = unit ?: ""
     )
 }

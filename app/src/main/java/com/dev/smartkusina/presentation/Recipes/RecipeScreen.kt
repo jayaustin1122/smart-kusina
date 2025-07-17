@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,9 +42,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.dev.smartkusina.composables.ErrorCard
 import com.dev.smartkusina.domain.model.Meal
+import com.dev.smartkusina.presentation.ingredients.IngredientsViewModel
 import com.dev.smartkusina.util.Response
 
 @Composable
@@ -51,8 +56,15 @@ fun RecipesContent(
     onRecipeClick: (String) -> Unit,
     onFavoriteClick: (String) -> Unit
 ) {
-
+    val ingredientsViewModel: IngredientsViewModel = hiltViewModel()
+    val ingredientsUiState by ingredientsViewModel.uiState.collectAsState()
+    val userIngredients = ingredientsUiState.ingredients
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        ingredientsViewModel.refreshIngredients()
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -78,6 +90,28 @@ fun RecipesContent(
             )
         }
 
+        if (userIngredients.isNotEmpty()) {
+            item {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = null,
+                        tint = Color(0xFFF28C20),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Recipes sorted by ingredient matches (${userIngredients.size} ingredients)",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color(0xFFF28C20)
+                    )
+                }
+            }
+        }
+
         when (mealsState) {
             is Response.Loading -> {
                 item {
@@ -91,24 +125,46 @@ fun RecipesContent(
             }
             is Response.Success -> {
                 val meals = mealsState.data.orEmpty()
-                val filteredMeals = meals.filter { it.strMeal.contains(searchQuery, ignoreCase = true) }
-                if (filteredMeals.isEmpty()) {
+                val filteredAndSortedMeals = getFilteredAndSortedMeals(
+                    meals = meals,
+                    searchQuery = searchQuery,
+                    userIngredients = userIngredients
+                )
+
+                if (filteredAndSortedMeals.isEmpty()) {
                     item {
-                        Text(
-                            text = "No recipes found",
-                            style = MaterialTheme.typography.bodyMedium,
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = if (searchQuery.isNotBlank())
+                                    "No recipes found for '$searchQuery'"
+                                else "No recipes available",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            if (searchQuery.isNotBlank()) {
+                                Text(
+                                    text = "Try searching for something else",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                        }
                     }
-                }
-                else{
-                    items(filteredMeals) { meal ->
+                } else {
+                    items(
+                        items = filteredAndSortedMeals,
+                        key = { it.idMeal }
+                    ) { meal ->
                         MealCard(
                             meal = meal,
                             onClick = { onRecipeClick(meal.idMeal) },
                             isFavorite = favoriteIds.contains(meal.idMeal),
-                            onFavoriteClick = { onFavoriteClick(meal.idMeal) }
+                            onFavoriteClick = { onFavoriteClick(meal.idMeal) },
+                            userIngredients = userIngredients
                         )
                     }
                 }
@@ -122,19 +178,65 @@ fun RecipesContent(
     }
 }
 
+private fun getFilteredAndSortedMeals(
+    meals: List<Meal>,
+    searchQuery: String,
+    userIngredients: List<String>
+): List<Meal> {
+    val filteredMeals = if (searchQuery.isNotBlank()) {
+        meals.filter { meal ->
+            meal.strMeal.contains(searchQuery, ignoreCase = true) ||
+                    meal.ingredients.any { ingredient ->
+                        ingredient?.contains(searchQuery, ignoreCase = true) == true
+                    }
+        }
+    } else {
+        meals
+    }
+
+    return if (userIngredients.isNotEmpty()) {
+        filteredMeals.sortedWith(compareByDescending<Meal> { recipe ->
+            getIngredientMatchCount(recipe, userIngredients)
+        }.thenBy { recipe ->
+            recipe.strMeal
+        })
+    } else {
+        filteredMeals
+    }
+}
+
+private fun getIngredientMatchCount(meal: Meal, userIngredients: List<String>): Int {
+    return meal.ingredients.count { ingredient ->
+        ingredient?.let { ing ->
+            userIngredients.any { userIngredient ->
+                ing.contains(userIngredient, ignoreCase = true) ||
+                        userIngredient.contains(ing, ignoreCase = true)
+            }
+        } ?: false
+    }
+}
 
 @Composable
 fun MealCard(
     meal: Meal,
     onClick: () -> Unit,
     isFavorite: Boolean = false,
-    onFavoriteClick: (() -> Unit)? = null
+    onFavoriteClick: (() -> Unit)? = null,
+    userIngredients: List<String> = emptyList()
 ) {
+    val matchCount = getIngredientMatchCount(meal, userIngredients)
+    val totalIngredients = meal.ingredients.count { !it.isNullOrBlank() }
+    val matchPercentage = if (totalIngredients > 0) {
+        (matchCount.toFloat() / totalIngredients * 100).toInt()
+    } else 0
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (matchCount > 0) Color(0xFFFFF8F0) else Color.White
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(
@@ -163,6 +265,25 @@ fun MealCard(
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
+
+                if (userIngredients.isNotEmpty()) {
+                    if (matchCount > 0) {
+                        Text(
+                            text = "✓ $matchCount/$totalIngredients ingredients ($matchPercentage%)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFF28C20),
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                    } else {
+                        Text(
+                            text = "No matching ingredients",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                    }
+                }
 
                 meal.strCategory?.let {
                     Text(

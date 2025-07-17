@@ -16,13 +16,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.dev.smartkusina.R
 import com.dev.smartkusina.domain.model.SpoonRecipe
 import com.dev.smartkusina.domain.model.ExtendedIngredient
 import com.dev.smartkusina.domain.model.AnalyzedInstruction
@@ -98,22 +101,22 @@ fun SpoonRecipeDetails(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     RecipeStatItem(
-                        icon = Icons.Default.ArrowBack,
+                        icon = painterResource(R.drawable.baseline_access_time_24),
                         value = "${recipe.readyInMinutes}",
                         label = "Minutes"
                     )
                     RecipeStatItem(
-                        icon = Icons.Default.ArrowBack,
+                        icon = painterResource(R.drawable.baseline_room_service_24),
                         value = "${recipe.servings}",
                         label = "Servings"
                     )
                     RecipeStatItem(
-                        icon = Icons.Default.Star,
+                        icon = painterResource(R.drawable.baseline_health_and_safety_24),
                         value = "${recipe.healthScore.toInt()}",
                         label = "Health Score"
                     )
                     RecipeStatItem(
-                        icon = Icons.Default.ArrowBack,
+                        icon = painterResource(R.drawable.baseline_handshake_24),
                         value = "${recipe.aggregateLikes}",
                         label = "Likes"
                     )
@@ -201,7 +204,7 @@ fun SpoonRecipeDetails(
 
 @Composable
 fun RecipeStatItem(
-    icon: ImageVector,
+    icon: Painter,
     value: String,
     label: String
 ) {
@@ -210,7 +213,7 @@ fun RecipeStatItem(
         modifier = Modifier.padding(8.dp)
     ) {
         Icon(
-            imageVector = icon,
+            painter = icon,
             contentDescription = label,
             tint = Color(0xFFF28C20),
             modifier = Modifier.size(24.dp)

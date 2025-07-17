@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -28,6 +28,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +49,7 @@ import com.dev.smartkusina.composables.WelcomeCard
 import com.dev.smartkusina.domain.model.SimilarRecipe
 import com.dev.smartkusina.domain.model.SpoonRecipe
 import com.dev.smartkusina.presentation.auth.state.AuthState
+import com.dev.smartkusina.presentation.ingredients.IngredientsViewModel
 import com.dev.smartkusina.util.Response
 import com.google.accompanist.swiperefresh.SwipeRefresh
 import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
@@ -60,12 +63,22 @@ fun HomeContent(
 ) {
     val isRefreshing = spoonRecipeState is Response.Loading
     val homeViewModel: HomeViewModel = hiltViewModel()
+    val ingredientsViewModel: IngredientsViewModel = hiltViewModel()
 
+    val ingredientsUiState by ingredientsViewModel.uiState.collectAsState()
+    val userIngredients = ingredientsUiState.ingredients
     var searchQuery by remember { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        ingredientsViewModel.refreshIngredients()
+        homeViewModel.refreshData()
+    }
 
     SwipeRefresh(
         state = rememberSwipeRefreshState(isRefreshing),
-        onRefresh = { homeViewModel.fetchRandomMeals() }
+        onRefresh = {
+            homeViewModel.refreshData()
+        }
     ) {
         LazyColumn(
             modifier = Modifier
@@ -78,11 +91,14 @@ fun HomeContent(
                     is AuthState.Authenticated -> {
                         WelcomeCard(userName = authState.user.name)
                     }
-
                     is AuthState.Loading -> {
-                        CircularProgressIndicator(color = Color(0xFFF28C20))
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(color = Color(0xFFF28C20))
+                        }
                     }
-
                     else -> {}
                 }
             }
@@ -95,6 +111,28 @@ fun HomeContent(
                     placeholder = { Text("Search recipes...") },
                     singleLine = true
                 )
+            }
+
+            if (userIngredients.isNotEmpty()) {
+                item {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            tint = Color(0xFFF28C20),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Recipes sorted by ingredient matches (${userIngredients.size} ingredients)",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Color(0xFFF28C20)
+                        )
+                    }
+                }
             }
 
             item {
@@ -120,24 +158,47 @@ fun HomeContent(
 
                 is Response.Success -> {
                     val meals = spoonRecipeState.data.orEmpty()
-                    val filteredMeals = meals.filter { it.title.contains(searchQuery, ignoreCase = true) }
+                    val filteredAndSortedMeals = getFilteredAndSortedMeals(
+                        meals = meals,
+                        searchQuery = searchQuery,
+                        userIngredients = userIngredients
+                    )
 
-                    if (filteredMeals.isEmpty()) {
+                    if (filteredAndSortedMeals.isEmpty()) {
                         item {
-                            Text(
-                                text = "No recipes found.",
-                                color = Color.Gray,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = if (searchQuery.isNotBlank())
+                                        "No recipes found for '$searchQuery'"
+                                    else "No recipes available",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                if (searchQuery.isNotBlank()) {
+                                    Text(
+                                        text = "Try searching for something else",
+                                        color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
                         }
                     } else {
-                        items(filteredMeals) { meal ->
+                        items(
+                            items = filteredAndSortedMeals,
+                            key = { it.id }
+                        ) { meal ->
                             MealCardSpoon(
                                 meal = meal,
                                 onClick = {
                                     homeViewModel.setRecipe(meal)
                                     onRecipeClick(meal.id.toString())
-                                }
+                                },
+                                userIngredients = userIngredients
                             )
                         }
                     }
@@ -153,57 +214,120 @@ fun HomeContent(
         }
     }
 }
+
+private fun getFilteredAndSortedMeals(
+    meals: List<SpoonRecipe>,
+    searchQuery: String,
+    userIngredients: List<String>
+): List<SpoonRecipe> {
+    val filteredMeals = if (searchQuery.isNotBlank()) {
+        meals.filter { meal ->
+            meal.title.contains(searchQuery, ignoreCase = true) ||
+                    meal.extendedIngredients.any { ingredient ->
+                        ingredient.name.contains(searchQuery, ignoreCase = true)
+                    }
+        }
+    } else {
+        meals
+    }
+
+    return if (userIngredients.isNotEmpty()) {
+        filteredMeals.sortedWith(compareByDescending<SpoonRecipe> { recipe ->
+            getIngredientMatchCount(recipe, userIngredients)
+        }.thenBy { recipe ->
+            recipe.title
+        })
+    } else {
+        filteredMeals
+    }
+}
+
+private fun getIngredientMatchCount(recipe: SpoonRecipe, userIngredients: List<String>): Int {
+    return recipe.extendedIngredients.count { ingredient ->
+        userIngredients.any { userIngredient ->
+            ingredient.name.contains(userIngredient, ignoreCase = true) ||
+                    userIngredient.contains(ingredient.name, ignoreCase = true)
+        }
+    }
+}
+
 @Composable
 fun MealCardSpoon(
     meal: SpoonRecipe,
     onClick: () -> Unit,
     isFavorite: Boolean = false,
-    onFavoriteClick: (() -> Unit)? = null
+    onFavoriteClick: (() -> Unit)? = null,
+    userIngredients: List<String>
 ) {
+    val matchCount = getIngredientMatchCount(meal, userIngredients)
+    val matchPercentage = if (meal.extendedIngredients.isNotEmpty()) {
+        (matchCount.toFloat() / meal.extendedIngredients.size * 100).toInt()
+    } else 0
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(
+            containerColor = if (matchCount > 0) Color(0xFFFFF8F0) else Color.White
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            AsyncImage(
-                model = meal.image,
-                contentDescription = meal.title,
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
-                Text(
-                    text = meal.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AsyncImage(
+                    model = meal.image,
+                    contentDescription = meal.title,
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
                 )
-            }
 
-            onFavoriteClick?.let { callback ->
-                IconButton(
-                    onClick = { callback() }
-                ) {
-                    Icon(
-                        imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
-                        tint = if (isFavorite) Color.Red else Color.Gray
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = meal.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
+
+                    if (matchCount > 0) {
+                        Text(
+                            text = "✓ $matchCount/${meal.extendedIngredients.size} ingredients ($matchPercentage%)",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color(0xFFF28C20),
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    } else if (userIngredients.isNotEmpty()) {
+                        Text(
+                            text = "No matching ingredients",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+
+                    Text(
+                        text = "${meal.extendedIngredients.size} ingredients • ${meal.readyInMinutes} min",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
+                }
+
+                onFavoriteClick?.let { callback ->
+                    IconButton(onClick = { callback() }) {
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Filled.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = if (isFavorite) "Remove from favorites" else "Add to favorites",
+                            tint = if (isFavorite) Color.Red else Color.Gray
+                        )
+                    }
                 }
             }
         }

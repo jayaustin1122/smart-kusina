@@ -13,14 +13,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,7 +37,9 @@ import com.dev.smartkusina.presentation.auth.state.AuthState
 
 
 @Composable
-fun ProfileContent(authState: AuthState) {
+fun ProfileContent(authState: AuthState ,   onIngredientsClick: () -> Unit ) {
+    var showAboutDialog by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -68,36 +76,68 @@ fun ProfileContent(authState: AuthState) {
                         }
                     }
                 }
-
                 ProfileOptionCard(
-                    icon = Icons.Default.Settings,
-                    title = "Settings",
-                    subtitle = "App preferences and notifications"
+                    icon = Icons.Default.List,
+                    title = "My Ingredients",
+                    subtitle = "Manage your ingredient list",
+                    onClick = onIngredientsClick
                 )
 
                 ProfileOptionCard(
                     icon = Icons.Default.Info,
                     title = "About",
-                    subtitle = "App version and information"
+                    subtitle = "App version and information",
+                    onClick = { showAboutDialog = true }
                 )
             }
             else -> {
                 Text("Loading profile...")
             }
+
+        }
+        if (showAboutDialog) {
+            AboutDialog(onDismiss = { showAboutDialog = false })
         }
     }
 }
 
 @Composable
+fun AboutDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("OK")
+            }
+        },
+        title = {
+            Text(text = "About Smart Kusina")
+        },
+        text = {
+            Column {
+                Text("Smart Kusina v1.0.0")
+                Spacer(modifier = Modifier.padding(top = 4.dp))
+                Text("This app uses the following APIs:")
+                Text("- Spoonacular API")
+                Text("- ThemealDB API")
+                Text("- DummyJSON API")
+            }
+        }
+    )
+}
+
+
+@Composable
 fun ProfileOptionCard(
     icon: ImageVector,
     title: String,
-    subtitle: String
+    subtitle: String,
+    onClick: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { },
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {

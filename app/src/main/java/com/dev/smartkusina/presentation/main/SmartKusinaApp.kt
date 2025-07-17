@@ -15,6 +15,7 @@ import com.dev.smartkusina.presentation.home.HomeViewModel
 import com.dev.smartkusina.presentation.home.RecipeDetailScreen
 import com.dev.smartkusina.presentation.home.RecipeDetailViewModel
 import com.dev.smartkusina.presentation.home.SpoonRecipeDetails
+import com.dev.smartkusina.presentation.ingredients.IngredientsScreen
 import com.dev.smartkusina.presentation.main.SplashScreen
 import kotlinx.coroutines.delay
 import java.lang.reflect.Modifier
@@ -68,6 +69,9 @@ fun SmartKusinaApp() {
                 },
                 onNavigateToSpoonDetails = {
                     navController.navigate("spoonDetail/$it")
+                    },
+                onNavtoIngridients = {
+                    navController.navigate("ingredients")
                 }
             )
         }
@@ -104,6 +108,12 @@ fun SmartKusinaApp() {
                     Text(text = "Recipe not found")
                 }
             }
+        }
+
+        composable("ingredients") {
+            IngredientsScreen(
+                onBackClick = { navController.popBackStack() }
+            )
         }
     }
 }

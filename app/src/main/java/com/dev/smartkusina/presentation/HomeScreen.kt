@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -15,8 +18,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -29,7 +34,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.dev.smartkusina.presentation.Recipes.RecipesContent
 import com.dev.smartkusina.presentation.auth.LoginViewModel
@@ -48,11 +55,11 @@ fun HomeScreen(
     onNavigateToLogin: () -> Unit,
     onNavigateToRecipeDetail: (String) -> Unit,
     onNavigateToSpoonDetails: (String) -> Unit,
+    onNavtoIngridients: () -> Unit,
     viewModel: LoginViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel(),
     favoritesViewModel: FavoritesViewModel = hiltViewModel()
 ) {
-
     val authState by viewModel.authState.collectAsState()
     val authAction by viewModel.authAction.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -62,6 +69,7 @@ fun HomeScreen(
     val favoriteIds by favoritesViewModel.favoriteIds.collectAsState()
     val isRefreshing = mealsState is Response.Loading
     var selectedTab by remember { mutableStateOf(HomeTab.HOME) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (homeViewModel.mealsState.value !is Response.Success) {
@@ -75,13 +83,13 @@ fun HomeScreen(
             Log.d("HomeScreen", "HomeScreen: value : ${homeViewModel.spoonRecipesState.value}")
         }
     }
+
     LaunchedEffect(authAction) {
         authAction?.let { action ->
             when (action) {
                 is AuthAction.LogoutSuccess -> {
                     onNavigateToLogin()
                 }
-
                 else -> {}
             }
             viewModel.clearAuthAction()
@@ -93,9 +101,60 @@ fun HomeScreen(
             is AuthState.Unauthenticated -> {
                 onNavigateToLogin()
             }
-
             else -> {}
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = "Logout",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to logout?",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        viewModel.logout()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFF28C20)
+                    ),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    } else {
+                        Text("Logout", color = Color.White)
+                    }
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { showLogoutDialog = false },
+                    enabled = !isLoading
+                ) {
+                    Text("Cancel", color = Color(0xFFF28C20))
+                }
+            },
+            properties = DialogProperties(
+                dismissOnBackPress = !isLoading,
+                dismissOnClickOutside = !isLoading
+            )
+        )
     }
 
     Scaffold(
@@ -109,19 +168,10 @@ fun HomeScreen(
                 },
                 actions = {
                     IconButton(
-                        onClick = {
-                            viewModel.logout()
-                        },
+                        onClick = { showLogoutDialog = true },
                         enabled = !isLoading
                     ) {
-                        if (isLoading) {
-                            CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        } else {
-                            Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
-                        }
+                        Icon(Icons.Default.ExitToApp, contentDescription = "Logout")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -160,10 +210,13 @@ fun HomeScreen(
                     onFavoriteClick = { recipeId ->
                         favoritesViewModel.toggleFavorite(recipeId)
                     }
-
                 )
 
-                HomeTab.PROFILE -> ProfileContent(authState = authState)
+                HomeTab.PROFILE -> ProfileContent(
+                    authState = authState,
+                    onIngredientsClick = onNavtoIngridients
+                )
+
                 HomeTab.FAVORITES -> {
                     FavoritesScreen(
                         onRecipeClick = onNavigateToRecipeDetail

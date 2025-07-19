@@ -8,6 +8,7 @@ import com.dev.smartkusina.data.remote.dummyjson.DummyjsonService
 import com.dev.smartkusina.data.remote.spoonacular.SpoonService
 import com.dev.smartkusina.data.remote.the_meal.DetailMealService
 import com.dev.smartkusina.data.remote.the_meal.RandomMealService
+import com.dev.smartkusina.data.repository.AuthRepositoryImpl
 import com.dev.smartkusina.data.repository.FavoritesRepositoryImpl
 import com.dev.smartkusina.data.repository.GetAllRecipesFromDummyJsonImpl
 import com.dev.smartkusina.data.repository.GetMealDetailRepositoryImpl
@@ -15,6 +16,7 @@ import com.dev.smartkusina.data.repository.GetRandomMealRepositoryImpl
 import com.dev.smartkusina.data.repository.GetRandomSpoonRecipeImpl
 import com.dev.smartkusina.data.repository.GetSimilarSpoonRecipeImpl
 import com.dev.smartkusina.data.repository.UserRepositoryImpl
+import com.dev.smartkusina.domain.repository.AuthRepository
 import com.dev.smartkusina.domain.repository.FavoritesRepository
 import com.dev.smartkusina.domain.repository.MealDetailRepository
 import com.dev.smartkusina.domain.repository.MealRepository
@@ -22,6 +24,9 @@ import com.dev.smartkusina.domain.repository.RecipeRepository
 import com.dev.smartkusina.domain.repository.SimilarSpoonRecipeRepository
 import com.dev.smartkusina.domain.repository.SpoonRecipeRepository
 import com.dev.smartkusina.domain.repository.UserRepository
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -82,5 +87,14 @@ object RepositoryModule {
     @Singleton
     fun provideSharedPreferencesManager(@ApplicationContext context: Context): SharedPreferencesManager {
         return SharedPreferencesManager(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthRepository(
+        firebaseAuth: FirebaseAuth,
+        firestore: FirebaseFirestore
+    ): AuthRepository {
+        return AuthRepositoryImpl(firebaseAuth, firestore)
     }
 }

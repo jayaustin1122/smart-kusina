@@ -1,7 +1,13 @@
+// presentation/auth/AuthScreen.kt
 package com.dev.smartkusina.presentation.auth
 
+import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Warning
@@ -20,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -33,6 +41,9 @@ import com.dev.smartkusina.R
 import com.dev.smartkusina.composables.LoadingScreen
 import com.dev.smartkusina.presentation.auth.state.AuthAction
 import com.dev.smartkusina.presentation.auth.state.AuthState
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
 
 @Composable
 fun LoginScreen(
@@ -42,6 +53,32 @@ fun LoginScreen(
     val authState by viewModel.authState.collectAsState()
     val authAction by viewModel.authAction.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val context = LocalContext.current
+
+    val gso = remember {
+        GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(context.getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+    }
+
+    val googleSignInClient = remember {
+        GoogleSignIn.getClient(context, gso)
+    }
+
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(ApiException::class.java)
+                viewModel.signInWithGoogle(account)
+            } catch (e: ApiException) {
+                // Google Sign-In failed
+            }
+        }
+    }
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
@@ -55,6 +92,7 @@ fun LoginScreen(
 
     var isLoginMode by remember { mutableStateOf(true) }
     var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -81,6 +119,11 @@ fun LoginScreen(
                     password = ""
                     confirmPassword = ""
                 }
+                is AuthAction.GoogleSignInSuccess -> {
+                    dialogType = DialogType.SUCCESS
+                    dialogMessage = "Google sign-in successful!"
+                    showDialog = true
+                }
                 is AuthAction.Error -> {
                     dialogType = DialogType.ERROR
                     dialogMessage = action.message
@@ -104,7 +147,10 @@ fun LoginScreen(
     // Loading Dialog
     if (isLoading) {
         LoadingDialog(
-            message = if (isLoginMode) "Signing in..." else "Creating account..."
+            message = when {
+                isLoginMode -> "Signing in..."
+                else -> "Creating account..."
+            }
         )
     }
 
@@ -129,6 +175,7 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(40.dp))
 
+            // App Logo
             Card(
                 modifier = Modifier.size(100.dp),
                 shape = RoundedCornerShape(50.dp),
@@ -159,6 +206,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            // Mode Toggle
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center
@@ -192,6 +240,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // Auth Form Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -199,15 +248,42 @@ fun LoginScreen(
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
+
+                    // Name field (only for registration)
+                    if (!isLoginMode) {
+                        OutlinedTextField(
+                            value = name,
+                            onValueChange = { name = it },
+                            label = { Text("Full Name") },
+                            leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isLoading,
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Text,
+                                imeAction = ImeAction.Next
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                            ),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFFF28C20),
+                                focusedLabelColor = Color(0xFFF28C20)
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+
+                    // Email field
                     OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text(if (isLoginMode) "Name" else "Full Name") },
-                        leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Text,
+                            keyboardType = KeyboardType.Email,
                             imeAction = ImeAction.Next
                         ),
                         keyboardActions = KeyboardActions(
@@ -221,6 +297,7 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    // Password field
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
@@ -250,7 +327,7 @@ fun LoginScreen(
                             onDone = {
                                 if (isLoginMode) {
                                     focusManager.clearFocus()
-                                    viewModel.login(name, password)
+                                    viewModel.signInWithEmail(email, password)
                                 } else {
                                     focusManager.moveFocus(FocusDirection.Down)
                                 }
@@ -263,6 +340,7 @@ fun LoginScreen(
                         )
                     )
 
+                    // Confirm Password field (only for registration)
                     if (!isLoginMode) {
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -295,7 +373,7 @@ fun LoginScreen(
                                 onDone = {
                                     focusManager.clearFocus()
                                     if (password == confirmPassword) {
-                                        viewModel.register(name, password)
+                                        viewModel.signUpWithEmail(email, password, name)
                                     }
                                 }
                             ),
@@ -318,21 +396,22 @@ fun LoginScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
+                    // Email/Password Auth Button
                     Button(
                         onClick = {
                             if (isLoginMode) {
-                                viewModel.login(name, password)
+                                viewModel.signInWithEmail(email, password)
                             } else {
                                 if (password == confirmPassword) {
-                                    viewModel.register(name, password)
+                                    viewModel.signUpWithEmail(email, password, name)
                                 }
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
-                        enabled = !isLoading && name.isNotEmpty() && password.isNotEmpty() &&
-                                (isLoginMode || password == confirmPassword),
+                        enabled = !isLoading && email.isNotEmpty() && password.isNotEmpty() &&
+                                (isLoginMode || (name.isNotEmpty() && password == confirmPassword)),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFF28C20)
                         ),
@@ -343,6 +422,60 @@ fun LoginScreen(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Divider
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Divider(modifier = Modifier.weight(1f))
+                        Text(
+                            text = "  OR  ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Divider(modifier = Modifier.weight(1f))
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Google Sign-In Button
+                    OutlinedButton(
+                        onClick = {
+                            val signInIntent = googleSignInClient.signInIntent
+                            googleSignInLauncher.launch(signInIntent)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        enabled = !isLoading,
+                        shape = RoundedCornerShape(12.dp),
+                        border = ButtonDefaults.outlinedButtonBorder.copy(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(Color.Gray, Color.Gray)
+                            )
+                        )
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.eye),
+                                contentDescription = "Google",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Continue with Google",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Black
+                            )
+                        }
                     }
                 }
             }

@@ -125,7 +125,7 @@ fun HomeScreen(
                 Button(
                     onClick = {
                         showLogoutDialog = false
-                        viewModel.logout()
+                        viewModel.signOut()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFF28C20)

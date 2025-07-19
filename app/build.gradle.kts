@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.kapt")
     id ("kotlin-kapt")
     id("kotlin-parcelize")
+    alias(libs.plugins.gms.service)
 }
 
 android {
@@ -95,7 +96,12 @@ dependencies {
     implementation (libs.kotlin.reflect)
     implementation(libs.accompanist.swiperefresh)
 
-
     //shimmer
     implementation (libs.compose.shimmer)
+
+    // Firebase dependencies
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore)
+    implementation(libs.play.services.auth)
 }

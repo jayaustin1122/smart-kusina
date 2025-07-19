@@ -29,3 +29,4 @@ mobile-legends-guide/.idea/runConfigurations.xml
 mobile-legends-guide/.idea/vcs.xml
 mobile-legends-guide/.idea/workspace.xml
 *.xml
+app/google-services.json

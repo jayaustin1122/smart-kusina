@@ -1,14 +1,17 @@
 package com.dev.smartkusina.presentation.auth
 
+import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dev.smartkusina.data.local.entity.UserEntity
-import com.dev.smartkusina.domain.usecase.LoginUserUseCase
-import com.dev.smartkusina.domain.usecase.RegisterUserUseCase
-import com.dev.smartkusina.domain.usecase.GetCurrentUserUseCase
-import com.dev.smartkusina.domain.usecase.LogoutUserUseCase
+import com.dev.smartkusina.domain.model.AuthResult
+import com.dev.smartkusina.domain.usecase.authentication.IsUserSignedInUseCase
+import com.dev.smartkusina.domain.usecase.authentication.SignInWithEmailUseCase
+import com.dev.smartkusina.domain.usecase.authentication.SignInWithGoogleUseCase
+import com.dev.smartkusina.domain.usecase.authentication.SignOutUseCase
+import com.dev.smartkusina.domain.usecase.authentication.SignUpWithEmailUseCase
 import com.dev.smartkusina.presentation.auth.state.AuthAction
 import com.dev.smartkusina.presentation.auth.state.AuthState
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,10 +21,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val loginUseCase: LoginUserUseCase,
-    private val registerUseCase: RegisterUserUseCase,
-    private val getCurrentUserUseCase: GetCurrentUserUseCase,
-    private val logoutUserUseCase: LogoutUserUseCase
+    private val getCurrentUserUseCase: com.dev.smartkusina.domain.usecase.authentication.GetCurrentUserUseCase,
+    private val signInWithEmailUseCase: SignInWithEmailUseCase,
+    private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
+    private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
+    private val signOutUseCase: SignOutUseCase,
+    private val isUserSignedInUseCase: IsUserSignedInUseCase
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)
@@ -54,34 +59,44 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun login(name: String, password: String) {
-        if (name.isBlank() || password.isBlank()) {
+    fun signInWithEmail(email: String, password: String) {
+        if (email.isBlank() || password.isBlank()) {
             _authAction.value = AuthAction.Error("Please fill in all fields")
+            return
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _authAction.value = AuthAction.Error("Please enter a valid email address")
             return
         }
 
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                loginUseCase(name, password).collect { user ->
-                    if (user != null) {
-                        _authState.value = AuthState.Authenticated(user)
+                when (val result = signInWithEmailUseCase(email, password)) {
+                    is AuthResult.Success -> {
                         _authAction.value = AuthAction.LoginSuccess
-                    } else {
-                        _authAction.value = AuthAction.Error("Invalid credentials")
+                    }
+                    is AuthResult.Error -> {
+                        _authAction.value = AuthAction.Error(result.message)
                     }
                 }
             } catch (e: Exception) {
-                _authAction.value = AuthAction.Error("Login failed: ${e.message}")
+                _authAction.value = AuthAction.Error("Sign in failed: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun register(name: String, password: String) {
-        if (name.isBlank() || password.isBlank()) {
+    fun signUpWithEmail(email: String, password: String, name: String) {
+        if (email.isBlank() || password.isBlank() || name.isBlank()) {
             _authAction.value = AuthAction.Error("Please fill in all fields")
+            return
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            _authAction.value = AuthAction.Error("Please enter a valid email address")
             return
         }
 
@@ -93,31 +108,57 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                val user = UserEntity(name = name, password = password)
-                registerUseCase(user).collect { isSuccess ->
-                    if (isSuccess) {
+                when (val result = signUpWithEmailUseCase(email, password, name)) {
+                    is AuthResult.Success -> {
                         _authAction.value = AuthAction.RegisterSuccess
-                    } else {
-                        _authAction.value = AuthAction.Error("Registration failed. Name might already exist.")
+                    }
+                    is AuthResult.Error -> {
+                        _authAction.value = AuthAction.Error(result.message)
                     }
                 }
             } catch (e: Exception) {
-                _authAction.value = AuthAction.Error("Registration failed: ${e.message}")
+                _authAction.value = AuthAction.Error("Sign up failed: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
         }
     }
 
-    fun logout() {
+    fun signInWithGoogle(account: GoogleSignInAccount) {
         viewModelScope.launch {
             try {
                 _isLoading.value = true
-                logoutUserUseCase()
-                _authState.value = AuthState.Unauthenticated
-                _authAction.value = AuthAction.LogoutSuccess
+                when (val result = signInWithGoogleUseCase(account)) {
+                    is AuthResult.Success -> {
+                        _authAction.value = AuthAction.GoogleSignInSuccess
+                    }
+                    is AuthResult.Error -> {
+                        _authAction.value = AuthAction.Error(result.message)
+                    }
+                }
             } catch (e: Exception) {
-                _authAction.value = AuthAction.Error("Logout failed: ${e.message}")
+                _authAction.value = AuthAction.Error("Google sign in failed: ${e.message}")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                when (val result = signOutUseCase()) {
+                    is AuthResult.Success -> {
+                        _authState.value = AuthState.Unauthenticated
+                        _authAction.value = AuthAction.LogoutSuccess
+                    }
+                    is AuthResult.Error -> {
+                        _authAction.value = AuthAction.Error(result.message)
+                    }
+                }
+            } catch (e: Exception) {
+                _authAction.value = AuthAction.Error("Sign out failed: ${e.message}")
             } finally {
                 _isLoading.value = false
             }

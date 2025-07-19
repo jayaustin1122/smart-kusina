@@ -4,7 +4,6 @@ import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.smartkusina.domain.model.AuthResult
-import com.dev.smartkusina.domain.usecase.authentication.IsUserSignedInUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignInWithEmailUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignInWithGoogleUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignOutUseCase
@@ -26,7 +25,6 @@ class LoginViewModel @Inject constructor(
     private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
     private val signOutUseCase: SignOutUseCase,
-    private val isUserSignedInUseCase: IsUserSignedInUseCase
 ) : ViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Loading)

@@ -95,6 +95,7 @@ fun FavoritesScreen(
                                 meal = meal,
                                 onClick = { onRecipeClick(meal.id) },
                                 onRemoveFromFavorites = {
+                                    viewModel.toggleFavorite(meal.id)
                                 }
                             )
                         }

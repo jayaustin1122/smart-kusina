@@ -270,7 +270,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Auth Form Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -279,7 +278,6 @@ fun LoginScreen(
             ) {
                 Column(modifier = Modifier.padding(24.dp)) {
 
-                    // Name field (only for registration)
                     if (!isLoginMode) {
                         OutlinedTextField(
                             value = name,
@@ -304,7 +302,6 @@ fun LoginScreen(
                         Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    // Email field
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
@@ -452,60 +449,6 @@ fun LoginScreen(
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Divider
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Divider(modifier = Modifier.weight(1f))
-                        Text(
-                            text = "  OR  ",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                        Divider(modifier = Modifier.weight(1f))
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Google Sign-In Button
-                    OutlinedButton(
-                        onClick = {
-                            val signInIntent = googleSignInClient.signInIntent
-                            googleSignInLauncher.launch(signInIntent)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        enabled = !isLoading,
-                        shape = RoundedCornerShape(12.dp),
-                        border = ButtonDefaults.outlinedButtonBorder.copy(
-                            brush = Brush.horizontalGradient(
-                                colors = listOf(Color.Gray, Color.Gray)
-                            )
-                        )
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.eye),
-                                contentDescription = "Google",
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Continue with Google",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Color.Black
-                            )
-                        }
                     }
                 }
             }

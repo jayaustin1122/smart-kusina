@@ -4,6 +4,7 @@ import android.util.Patterns
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.dev.smartkusina.domain.model.AuthResult
+import com.dev.smartkusina.domain.usecase.authentication.GetCurrentUserUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignInWithEmailUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignInWithGoogleUseCase
 import com.dev.smartkusina.domain.usecase.authentication.SignOutUseCase
@@ -20,7 +21,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
-    private val getCurrentUserUseCase: com.dev.smartkusina.domain.usecase.authentication.GetCurrentUserUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val signInWithEmailUseCase: SignInWithEmailUseCase,
     private val signUpWithEmailUseCase: SignUpWithEmailUseCase,
     private val signInWithGoogleUseCase: SignInWithGoogleUseCase,
